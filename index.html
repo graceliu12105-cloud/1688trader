@@ -40,9 +40,9 @@
   .ticker-count span { color: #00aaff; }
 
   /* ── CHART CARDS ── */
-  .charts-container { padding: 6px 2px; display: flex; flex-direction: column; gap: 6px; }
+  .charts-container { padding: 6px 0; display: flex; flex-direction: column; gap: 6px; }
 
-  .chart-card { background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 3px; overflow: hidden; }
+  .chart-card { background: #0a0a0a; border: 1px solid #1e1e1e; border-left: none; border-right: none; overflow: hidden; }
 
   /* StockCharts-style header bar */
   .chart-header {
@@ -74,8 +74,8 @@
 
   .chart-status { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #666; padding: 4px 12px; min-height: 20px; }
 
-  .chart-body { width: 100%; height: 380px; }
-  .vol-body   { width: 100%; height: 70px; border-top: 1px solid #1a1a1a; }
+  .chart-body { width: 100%; height: 500px; }
+  .vol-body   { width: 100%; height: 60px; border-top: 1px solid #111; }
 
   footer { text-align: center; padding: 16px; font-family: 'Share Tech Mono', monospace; font-size: 10px; color: #333; border-top: 1px solid #1a1a1a; margin-top: 8px; }
   #scrollTop { position: fixed; bottom: 20px; right: 20px; width: 36px; height: 36px; background: #1a1a1a; color: #aaa; border: 1px solid #333; border-radius: 3px; font-size: 16px; cursor: pointer; display: none; align-items: center; justify-content: center; z-index: 200; }
@@ -183,7 +183,7 @@ function makeChartOpts(el) {
   return {
     container: el,
     width:  el.offsetWidth,
-    height: 380,
+    height: 500,
     layout: {
       background: { color: '#050505' },
       textColor:  '#666',
@@ -205,7 +205,7 @@ function makeChartOpts(el) {
       secondsVisible: false,
       fixLeftEdge:    true,
       fixRightEdge:   true,
-      barSpacing:     9
+      barSpacing:     11
     },
     handleScroll: true,
     handleScale:  true
@@ -216,7 +216,7 @@ function makeVolOpts(el) {
   return {
     container: el,
     width:  el.offsetWidth,
-    height: 70,
+    height: 60,
     layout: {
       background: { color: '#050505' },
       textColor:  '#555',
@@ -333,19 +333,31 @@ async function buildCard(ticker) {
     // ── Volume ───────────────────────────────────────────────
     const volEl    = document.getElementById('vb_' + safeId);
     const volChart = LightweightCharts.createChart(volEl, makeVolOpts(volEl));
+
+    // Use a bar series for volume to get thin 1px sticks — much thinner than histogram
     const volSeries = volChart.addHistogramSeries({
       priceFormat:  { type: 'volume' },
-      priceScaleId: 'vol',
-      scaleMargins: { top: 0.05, bottom: 0 },
+      priceScaleId: 'right',
+      scaleMargins: { top: 0.0, bottom: 0 },
       base: 0
     });
+
     volSeries.setData(bars.map(b => ({
       time:  b.time,
       value: b.volume,
-      color: b.close >= b.open ? 'rgba(0,204,68,0.5)' : 'rgba(255,68,68,0.5)'
+      color: b.close >= b.open ? 'rgba(0,180,60,0.7)' : 'rgba(220,50,50,0.7)'
     })));
-    // Make volume bars visually thinner via price scale margin
-    volChart.priceScale('vol').applyOptions({ scaleMargins: { top: 0.1, bottom: 0 } });
+
+    // Force very tight bar spacing on vol chart to make bars thin
+    volChart.applyOptions({
+      timeScale: {
+        barSpacing: 3,
+        fixLeftEdge: true,
+        fixRightEdge: true,
+        borderColor: '#1a1a1a',
+        timeVisible: false
+      }
+    });
     volChart.timeScale().fitContent();
 
     // Sync crosshair
