@@ -5,18 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Stock Watchlist — EMA 30/60</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 <style>
   :root {
     --bg: #090c10; --surface: #0d1117; --border: #1e2d3d;
     --accent: #00e5ff; --accent2: #ff6b35; --text: #cdd9e5;
-    --muted: #546e7a; --green: #00e676; --red: #ff1744;
+    --muted: #546e7a; --green: #26a69a; --red: #ef5350;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; min-height: 100vh; }
+  body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; }
 
   header {
     position: sticky; top: 0; z-index: 100;
-    background: rgba(9,12,16,0.92); backdrop-filter: blur(12px);
+    background: rgba(9,12,16,0.95); backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border);
     padding: 0 24px; height: 56px;
     display: flex; align-items: center; justify-content: space-between;
@@ -24,12 +25,12 @@
   .logo { font-family: 'Share Tech Mono', monospace; font-size: 18px; color: var(--accent); letter-spacing: 2px; }
   .logo span { color: var(--accent2); }
   .header-meta { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 20px; }
-  .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); display: inline-block; margin-right: 6px; animation: pulse 1.8s ease-in-out infinite; }
+  .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #00e676; display: inline-block; margin-right: 6px; animation: pulse 1.8s ease-in-out infinite; }
   @keyframes pulse { 0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,230,118,0.5)}50%{opacity:.7;box-shadow:0 0 0 5px rgba(0,230,118,0)} }
 
   .controls { padding: 14px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border-bottom: 1px solid var(--border); background: var(--surface); }
   .controls label { font-size: 12px; color: var(--muted); font-family: 'Share Tech Mono', monospace; }
-  .controls input[type=text] { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 4px; font-family: 'Share Tech Mono', monospace; font-size: 13px; width: 220px; outline: none; transition: border-color 0.2s; }
+  .controls input[type=text] { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 4px; font-family: 'Share Tech Mono', monospace; font-size: 13px; width: 200px; outline: none; transition: border-color 0.2s; }
   .controls input[type=text]:focus { border-color: var(--accent); }
   .btn { padding: 6px 16px; border-radius: 4px; border: 1px solid var(--accent); background: transparent; color: var(--accent); font-family: 'Share Tech Mono', monospace; font-size: 12px; cursor: pointer; transition: all 0.2s; }
   .btn:hover { background: var(--accent); color: var(--bg); }
@@ -39,21 +40,25 @@
   .charts-container { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
 
   .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
-  .chart-card:hover { border-color: #2a3f52; }
   .chart-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--border); }
   .ticker-label { font-family: 'Share Tech Mono', monospace; font-size: 15px; font-weight: 700; color: var(--accent); letter-spacing: 1.5px; }
+  .ticker-info  { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--muted); }
+  .ticker-info .price { color: var(--text); font-size: 14px; }
+  .ticker-info .chg.up { color: #26a69a; }
+  .ticker-info .chg.dn { color: #ef5350; }
   .chart-tags { display: flex; gap: 6px; }
   .tag { font-family: 'Share Tech Mono', monospace; font-size: 10px; padding: 2px 7px; border-radius: 3px; border: 1px solid; }
   .tag-ema30 { border-color: #ff9800; color: #ff9800; }
   .tag-ema60 { border-color: #2196f3; color: #2196f3; }
   .tag-vol   { border-color: var(--muted); color: var(--muted); }
   .tag-3m    { border-color: var(--muted); color: var(--muted); }
+  .chart-status { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--muted); padding: 8px 16px; min-height: 24px; }
 
-  .chart-body { width: 100%; height: 500px; position: relative; }
-  .chart-body > div { height: 100% !important; }
+  .chart-body { width: 100%; height: 360px; }
+  .vol-body   { width: 100%; height: 100px; border-top: 1px solid var(--border); }
 
-  footer { text-align: center; padding: 24px; font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--muted); border-top: 1px solid var(--border); }
-  #scrollTop { position: fixed; bottom: 24px; right: 24px; width: 40px; height: 40px; background: var(--accent); color: var(--bg); border: none; border-radius: 4px; font-size: 18px; cursor: pointer; display: none; align-items: center; justify-content: center; z-index: 200; font-family: monospace; }
+  footer { text-align: center; padding: 24px; font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--muted); border-top: 1px solid var(--border); margin-top: 20px; }
+  #scrollTop { position: fixed; bottom: 24px; right: 24px; width: 40px; height: 40px; background: var(--accent); color: var(--bg); border: none; border-radius: 4px; font-size: 18px; cursor: pointer; display: none; align-items: center; justify-content: center; z-index: 200; }
   #scrollTop.visible { display: flex; }
 </style>
 </head>
@@ -64,24 +69,24 @@
   <div class="header-meta">
     <span><span class="live-dot"></span>LIVE</span>
     <span id="clock">--:--:--</span>
-    <span>EMA 30 · EMA 60 · VOL · 3M DAILY</span>
+    <span>EMA 30 · EMA 60 · VOL · 3M DAILY BARS</span>
   </div>
 </header>
 
 <div class="controls">
   <label>FILTER:</label>
   <input type="text" id="filterInput" placeholder="Search ticker..." oninput="filterCharts(this.value)">
-  <button class="btn" onclick="filterCharts(''); document.getElementById('filterInput').value=''">CLEAR</button>
+  <button class="btn" onclick="document.getElementById('filterInput').value=''; filterCharts('')">CLEAR</button>
   <button class="btn" onclick="scrollToTicker()">GO TO</button>
+  <button class="btn" onclick="refreshAll()">↻ REFRESH</button>
   <div class="ticker-count">Showing <span id="visibleCount">76</span> / 76 charts</div>
 </div>
 
 <div class="charts-container" id="chartsContainer"></div>
 
-<footer>Data by TradingView · 15-min delayed (free) · Daily Candles · EMA 30 (orange) · EMA 60 (blue) · Volume · 3-Month Range</footer>
+<footer>Yahoo Finance data · 15-min delayed · Daily OHLCV Bars · EMA 30 (orange) · EMA 60 (blue) · 3-Month Range</footer>
 <button id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
-<script src="https://s3.tradingview.com/tv.js"></script>
 <script>
 const TICKERS = [
   "AAOI","AEHR","AGCC","AGPU","AIOS","AKAN","ALM","ALMU","ALOY","ANPA",
@@ -94,84 +99,225 @@ const TICKERS = [
   "WOLF","XNDU","YDDL","YI","YJ","YOOV","IWC","NEBX","QQQ","VCX"
 ];
 
-const container = document.getElementById('chartsContainer');
-
-// Calculate 3 months ago in Unix timestamp (seconds)
-function getFromTimestamp() {
-  const d = new Date();
-  d.setMonth(d.getMonth() - 3);
-  return Math.floor(d.getTime() / 1000);
+// ── EMA calculation ──────────────────────────────────────────
+function calcEMA(data, period) {
+  const k = 2 / (period + 1);
+  const result = [];
+  let ema = null;
+  for (const d of data) {
+    if (ema === null) { ema = d.close; }
+    else { ema = d.close * k + ema * (1 - k); }
+    result.push({ time: d.time, value: parseFloat(ema.toFixed(4)) });
+  }
+  return result;
 }
 
-function renderCharts(tickers) {
-  container.innerHTML = '';
-  const fromTs = getFromTimestamp();
-  const toTs   = Math.floor(Date.now() / 1000) + 86400; // today + 1 day buffer
+// ── Fetch daily OHLCV from Yahoo Finance via allorigins proxy ─
+async function fetchOHLCV(ticker) {
+  const now   = Math.floor(Date.now() / 1000);
+  const from  = now - (95 * 86400); // ~95 days back (covers 3 trading months + buffer)
+  const url   = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&period1=${from}&period2=${now}&includePrePost=false`;
+  const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
 
-  tickers.forEach(ticker => {
-    const containerId = 'tv_' + ticker.replace(/[^a-zA-Z0-9]/g, '_') + '_' + Math.random().toString(36).slice(2,7);
+  const res  = await fetch(proxy);
+  const json = await res.json();
+  const data = JSON.parse(json.contents);
 
-    const card = document.createElement('div');
-    card.className = 'chart-card';
-    card.dataset.ticker = ticker;
-    card.innerHTML = `
-      <div class="chart-header">
-        <span class="ticker-label">${ticker}</span>
-        <div class="chart-tags">
-          <span class="tag tag-ema30">EMA 30</span>
-          <span class="tag tag-ema60">EMA 60</span>
-          <span class="tag tag-vol">VOL</span>
-          <span class="tag tag-3m">3M · 1D</span>
-        </div>
-      </div>
-      <div class="chart-body"><div id="${containerId}"></div></div>`;
-    container.appendChild(card);
+  const chart     = data.chart.result[0];
+  const timestamps = chart.timestamp;
+  const q          = chart.indicators.quote[0];
 
-    new TradingView.widget({
-      container_id: containerId,
-      autosize:     true,
-      symbol:       ticker,
-      interval:     "D",         // Daily bars
-      // Use from/to instead of range — this forces D interval correctly
-      from:         fromTs,
-      to:           toTs,
-      timezone:     "America/Chicago",
-      theme:        "dark",
-      style:        "1",
-      locale:       "en",
-      toolbar_bg:   "#0d1117",
-      backgroundColor: "rgba(9,12,16,1)",
-      gridColor:    "rgba(30,45,61,0.5)",
-      hide_top_toolbar:    false,
-      hide_legend:         false,
-      withdateranges:      false,
-      allow_symbol_change: false,
-      save_image:          false,
-      studies: [
-        { id: "MAExp@tv-basicstudies", inputs: { length: 30 } },
-        { id: "MAExp@tv-basicstudies", inputs: { length: 60 } },
-        "Volume@tv-basicstudies"
-      ],
-      overrides: {
-        "mainSeriesProperties.candleStyle.upColor":         "#00e676",
-        "mainSeriesProperties.candleStyle.downColor":       "#ff1744",
-        "mainSeriesProperties.candleStyle.borderUpColor":   "#00e676",
-        "mainSeriesProperties.candleStyle.borderDownColor": "#ff1744",
-        "mainSeriesProperties.candleStyle.wickUpColor":     "#00e676",
-        "mainSeriesProperties.candleStyle.wickDownColor":   "#ff1744"
-      },
-      studies_overrides: {
-        "moving average exp.plot.color.0":     "#ff9800",
-        "moving average exp.plot.linewidth.0": 1.5,
-        "moving average exp.plot.color.1":     "#2196f3",
-        "moving average exp.plot.linewidth.1": 1.5,
-        "volume.volume.color.0": "#ff1744",
-        "volume.volume.color.1": "#00e676"
-      }
+  const bars = [];
+  for (let i = 0; i < timestamps.length; i++) {
+    if (!q.open[i] || !q.high[i] || !q.low[i] || !q.close[i]) continue;
+    bars.push({
+      time:   timestamps[i],  // Unix seconds — LightweightCharts accepts this
+      open:   parseFloat(q.open[i].toFixed(4)),
+      high:   parseFloat(q.high[i].toFixed(4)),
+      low:    parseFloat(q.low[i].toFixed(4)),
+      close:  parseFloat(q.close[i].toFixed(4)),
+      volume: q.volume[i] || 0
     });
-  });
+  }
+  // Sort ascending
+  bars.sort((a,b) => a.time - b.time);
+  return bars;
+}
 
+// ── Chart layout config ──────────────────────────────────────
+const chartOpts = (container) => ({
+  container,
+  width:  container.offsetWidth,
+  height: 360,
+  layout: {
+    background: { color: '#0d1117' },
+    textColor:  '#546e7a',
+    fontFamily: "'Share Tech Mono', monospace",
+    fontSize:   11
+  },
+  grid: {
+    vertLines: { color: '#1e2d3d' },
+    horzLines:  { color: '#1e2d3d' }
+  },
+  crosshair: { mode: 1 },
+  rightPriceScale: { borderColor: '#1e2d3d' },
+  timeScale: {
+    borderColor:      '#1e2d3d',
+    timeVisible:      true,
+    secondsVisible:   false,
+    barSpacing:       8,
+    fixLeftEdge:      true,
+    fixRightEdge:     true
+  },
+  handleScroll: true,
+  handleScale:  true
+});
+
+const volOpts = (container) => ({
+  container,
+  width:  container.offsetWidth,
+  height: 100,
+  layout: {
+    background: { color: '#0d1117' },
+    textColor:  '#546e7a',
+    fontFamily: "'Share Tech Mono', monospace",
+    fontSize:   10
+  },
+  grid: {
+    vertLines: { color: '#1e2d3d' },
+    horzLines:  { color: '#1e2d3d' }
+  },
+  rightPriceScale: { borderColor: '#1e2d3d', scaleMargins: { top: 0.1, bottom: 0 } },
+  timeScale: {
+    borderColor:    '#1e2d3d',
+    timeVisible:    true,
+    secondsVisible: false,
+    fixLeftEdge:    true,
+    fixRightEdge:   true
+  },
+  handleScroll: false,
+  handleScale:  false
+});
+
+// Track charts for resize
+const allCharts = [];
+
+// ── Build one card ───────────────────────────────────────────
+async function buildCard(ticker) {
+  const card = document.createElement('div');
+  card.className = 'chart-card';
+  card.dataset.ticker = ticker;
+  card.innerHTML = `
+    <div class="chart-header">
+      <span class="ticker-label">${ticker}</span>
+      <div class="ticker-info"><span class="price" id="price_${ticker}">--</span> <span class="chg" id="chg_${ticker}"></span></div>
+      <div class="chart-tags">
+        <span class="tag tag-ema30">EMA 30</span>
+        <span class="tag tag-ema60">EMA 60</span>
+        <span class="tag tag-vol">VOL</span>
+        <span class="tag tag-3m">3M · 1D</span>
+      </div>
+    </div>
+    <div class="chart-status" id="status_${ticker}">Loading...</div>
+    <div class="chart-body"  id="chart_${ticker}"></div>
+    <div class="vol-body"    id="vol_${ticker}"></div>`;
+
+  document.getElementById('chartsContainer').appendChild(card);
+
+  try {
+    const bars = await fetchOHLCV(ticker);
+    if (!bars.length) throw new Error('No data');
+
+    document.getElementById('status_' + ticker).textContent = '';
+
+    // Price info
+    const last = bars[bars.length - 1];
+    const prev = bars[bars.length - 2];
+    const chgPct = prev ? ((last.close - prev.close) / prev.close * 100).toFixed(2) : 0;
+    document.getElementById('price_' + ticker).textContent = last.close.toFixed(2);
+    const chgEl = document.getElementById('chg_' + ticker);
+    chgEl.textContent = (chgPct >= 0 ? '+' : '') + chgPct + '%';
+    chgEl.className = 'chg ' + (chgPct >= 0 ? 'up' : 'dn');
+
+    // Main chart — BARS (not candles)
+    const chartEl = document.getElementById('chart_' + ticker);
+    const chart   = LightweightCharts.createChart(chartEl, chartOpts(chartEl));
+
+    const barSeries = chart.addBarSeries({
+      upColor:   '#26a69a',
+      downColor: '#ef5350',
+      thinBars:  false
+    });
+    barSeries.setData(bars);
+
+    // EMA 30 (orange)
+    const ema30Series = chart.addLineSeries({
+      color:     '#ff9800',
+      lineWidth: 1.5,
+      priceLineVisible: false,
+      lastValueVisible: true,
+      crosshairMarkerVisible: false
+    });
+    ema30Series.setData(calcEMA(bars, 30));
+
+    // EMA 60 (blue)
+    const ema60Series = chart.addLineSeries({
+      color:     '#2196f3',
+      lineWidth: 1.5,
+      priceLineVisible: false,
+      lastValueVisible: true,
+      crosshairMarkerVisible: false
+    });
+    ema60Series.setData(calcEMA(bars, 60));
+
+    chart.timeScale().fitContent();
+    allCharts.push({ chart, el: chartEl });
+
+    // Volume chart
+    const volEl  = document.getElementById('vol_' + ticker);
+    const volChart = LightweightCharts.createChart(volEl, volOpts(volEl));
+    const volSeries = volChart.addHistogramSeries({
+      priceFormat: { type: 'volume' },
+      priceScaleId: 'vol',
+      scaleMargins: { top: 0.1, bottom: 0 }
+    });
+    volSeries.setData(bars.map(b => ({
+      time:  b.time,
+      value: b.volume,
+      color: b.close >= b.open ? 'rgba(38,166,154,0.6)' : 'rgba(239,83,80,0.6)'
+    })));
+    volChart.timeScale().fitContent();
+
+    // Sync crosshair between main and vol
+    chart.subscribeCrosshairMove(p => {
+      if (p.time) volChart.setCrosshairPosition(0, p.time, volSeries);
+    });
+
+    allCharts.push({ chart: volChart, el: volEl });
+
+  } catch(e) {
+    document.getElementById('status_' + ticker).textContent = '⚠ Data unavailable: ' + e.message;
+    document.getElementById('chart_' + ticker).style.display = 'none';
+    document.getElementById('vol_' + ticker).style.display   = 'none';
+  }
+}
+
+// ── Render all ───────────────────────────────────────────────
+const container = document.getElementById('chartsContainer');
+let currentTickers = [...TICKERS];
+
+async function renderCharts(tickers) {
+  container.innerHTML = '';
+  allCharts.length = 0;
+  currentTickers = tickers;
   document.getElementById('visibleCount').textContent = tickers.length;
+
+  // Load in batches of 5 to avoid hammering the proxy
+  const BATCH = 5;
+  for (let i = 0; i < tickers.length; i += BATCH) {
+    const batch = tickers.slice(i, i + BATCH);
+    await Promise.all(batch.map(t => buildCard(t)));
+  }
 }
 
 function filterCharts(query) {
@@ -186,6 +332,9 @@ function scrollToTicker() {
   if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+function refreshAll() { renderCharts(currentTickers); }
+
+// Clock
 function updateClock() {
   document.getElementById('clock').textContent =
     new Date().toLocaleTimeString('en-US', { hour12: false, timeZone: 'America/Chicago' }) + ' CT';
@@ -193,9 +342,20 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
+// Scroll-to-top
 window.addEventListener('scroll', () => {
   document.getElementById('scrollTop').classList.toggle('visible', window.scrollY > 600);
 });
+
+// Auto-refresh every 5 minutes during market hours
+setInterval(() => {
+  const now = new Date();
+  const ct  = new Date(now.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+  const h   = ct.getHours(), m = ct.getMinutes(), day = ct.getDay();
+  const isWeekday = day >= 1 && day <= 5;
+  const isMarketHours = (h > 8 || (h === 8 && m >= 30)) && h < 16;
+  if (isWeekday && isMarketHours) refreshAll();
+}, 5 * 60 * 1000);
 
 renderCharts(TICKERS);
 </script>
