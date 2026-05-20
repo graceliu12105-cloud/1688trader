@@ -37,7 +37,7 @@
   .ticker-count { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--muted); margin-left: auto; }
   .ticker-count span { color: var(--accent); }
 
-  .charts-container { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+  .charts-container { padding: 12px 8px; display: flex; flex-direction: column; gap: 10px; }
 
   .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
   .chart-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--border); }
@@ -54,8 +54,8 @@
   .tag-3m    { border-color: var(--muted); color: var(--muted); }
   .chart-status { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--muted); padding: 8px 16px; min-height: 24px; }
 
-  .chart-body { width: 100%; height: 360px; }
-  .vol-body   { width: 100%; height: 100px; border-top: 1px solid var(--border); }
+  .chart-body { width: 100%; height: 260px; }
+  .vol-body   { width: 100%; height: 80px; border-top: 1px solid var(--border); }
 
   footer { text-align: center; padding: 24px; font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--muted); border-top: 1px solid var(--border); margin-top: 20px; }
   #scrollTop { position: fixed; bottom: 24px; right: 24px; width: 40px; height: 40px; background: var(--accent); color: var(--bg); border: none; border-radius: 4px; font-size: 18px; cursor: pointer; display: none; align-items: center; justify-content: center; z-index: 200; }
@@ -148,7 +148,7 @@ async function fetchOHLCV(ticker) {
 const chartOpts = (container) => ({
   container,
   width:  container.offsetWidth,
-  height: 360,
+  height: 260,
   layout: {
     background: { color: '#0d1117' },
     textColor:  '#546e7a',
@@ -176,7 +176,7 @@ const chartOpts = (container) => ({
 const volOpts = (container) => ({
   container,
   width:  container.offsetWidth,
-  height: 100,
+  height: 80,
   layout: {
     background: { color: '#0d1117' },
     textColor:  '#546e7a',
@@ -210,7 +210,7 @@ async function buildCard(ticker) {
   card.innerHTML = `
     <div class="chart-header">
       <span class="ticker-label">${ticker}</span>
-      <div class="ticker-info"><span class="price" id="price_${ticker}">--</span> <span class="chg" id="chg_${ticker}"></span></div>
+      <div class="ticker-info"><span class="price" id="price_${ticker}">--</span> <span class="chg" id="chg_${ticker}"></span> &nbsp;|&nbsp; <span style="color:#ff9800;font-size:11px">E30:<span id="ema30val_${ticker}">--</span></span> &nbsp;<span style="color:#2196f3;font-size:11px">E60:<span id="ema60val_${ticker}">--</span></span></div>
       <div class="chart-tags">
         <span class="tag tag-ema30">EMA 30</span>
         <span class="tag tag-ema60">EMA 60</span>
@@ -239,36 +239,55 @@ async function buildCard(ticker) {
     chgEl.textContent = (chgPct >= 0 ? '+' : '') + chgPct + '%';
     chgEl.className = 'chg ' + (chgPct >= 0 ? 'up' : 'dn');
 
+    // EMA values in header
+    const ema30All = calcEMA(bars, 30);
+    const ema60All = calcEMA(bars, 60);
+    const ema30Last = ema30All[ema30All.length - 1].value.toFixed(2);
+    const ema60Last = ema60All[ema60All.length - 1].value.toFixed(2);
+    document.getElementById('ema30val_' + ticker).textContent = ema30Last;
+    document.getElementById('ema60val_' + ticker).textContent = ema60Last;
+
     // Main chart — BARS (not candles)
     const chartEl = document.getElementById('chart_' + ticker);
     const chart   = LightweightCharts.createChart(chartEl, chartOpts(chartEl));
 
     const barSeries = chart.addBarSeries({
-      upColor:   '#26a69a',
-      downColor: '#ef5350',
-      thinBars:  false
+      upColor:          '#26a69a',
+      downColor:        '#ef5350',
+      thinBars:         true,
+      priceLineVisible: false   // ← removes the red broken horizontal line
     });
     barSeries.setData(bars);
 
-    // EMA 30 (orange)
+    // EMA 30 (orange) — show value on right price axis
+    const ema30Data = ema30All;
     const ema30Series = chart.addLineSeries({
       color:     '#ff9800',
       lineWidth: 1.5,
-      priceLineVisible: false,
-      lastValueVisible: true,
-      crosshairMarkerVisible: false
+      priceLineVisible:       true,
+      priceLineStyle:         1,   // dashed
+      priceLineColor:         '#ff9800',
+      priceLineWidth:         1,
+      lastValueVisible:       true,   // ← shows value label on right axis
+      crosshairMarkerVisible: false,
+      title: 'EMA30'
     });
-    ema30Series.setData(calcEMA(bars, 30));
+    ema30Series.setData(ema30Data);
 
-    // EMA 60 (blue)
+    // EMA 60 (blue) — show value on right price axis
+    const ema60Data = ema60All;
     const ema60Series = chart.addLineSeries({
       color:     '#2196f3',
       lineWidth: 1.5,
-      priceLineVisible: false,
-      lastValueVisible: true,
-      crosshairMarkerVisible: false
+      priceLineVisible:       true,
+      priceLineStyle:         1,   // dashed
+      priceLineColor:         '#2196f3',
+      priceLineWidth:         1,
+      lastValueVisible:       true,   // ← shows value label on right axis
+      crosshairMarkerVisible: false,
+      title: 'EMA60'
     });
-    ema60Series.setData(calcEMA(bars, 60));
+    ema60Series.setData(ema60Data);
 
     chart.timeScale().fitContent();
     allCharts.push({ chart, el: chartEl });
