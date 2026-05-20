@@ -7,15 +7,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #090c10;
-    --surface: #0d1117;
-    --border: #1e2d3d;
-    --accent: #00e5ff;
-    --accent2: #ff6b35;
-    --text: #cdd9e5;
-    --muted: #546e7a;
-    --green: #00e676;
-    --red: #ff1744;
+    --bg: #090c10; --surface: #0d1117; --border: #1e2d3d;
+    --accent: #00e5ff; --accent2: #ff6b35; --text: #cdd9e5;
+    --muted: #546e7a; --green: #00e676; --red: #ff1744;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; min-height: 100vh; }
@@ -33,16 +27,9 @@
   .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); display: inline-block; margin-right: 6px; animation: pulse 1.8s ease-in-out infinite; }
   @keyframes pulse { 0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,230,118,0.5)}50%{opacity:.7;box-shadow:0 0 0 5px rgba(0,230,118,0)} }
 
-  .controls {
-    padding: 14px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    border-bottom: 1px solid var(--border); background: var(--surface);
-  }
+  .controls { padding: 14px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border-bottom: 1px solid var(--border); background: var(--surface); }
   .controls label { font-size: 12px; color: var(--muted); font-family: 'Share Tech Mono', monospace; }
-  .controls input[type=text] {
-    background: var(--bg); border: 1px solid var(--border); color: var(--text);
-    padding: 6px 12px; border-radius: 4px; font-family: 'Share Tech Mono', monospace;
-    font-size: 13px; width: 220px; outline: none; transition: border-color 0.2s;
-  }
+  .controls input[type=text] { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 4px; font-family: 'Share Tech Mono', monospace; font-size: 13px; width: 220px; outline: none; transition: border-color 0.2s; }
   .controls input[type=text]:focus { border-color: var(--accent); }
   .btn { padding: 6px 16px; border-radius: 4px; border: 1px solid var(--accent); background: transparent; color: var(--accent); font-family: 'Share Tech Mono', monospace; font-size: 12px; cursor: pointer; transition: all 0.2s; }
   .btn:hover { background: var(--accent); color: var(--bg); }
@@ -51,7 +38,7 @@
 
   .charts-container { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
 
-  .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; transition: border-color 0.2s; }
+  .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
   .chart-card:hover { border-color: #2a3f52; }
   .chart-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--border); }
   .ticker-label { font-family: 'Share Tech Mono', monospace; font-size: 15px; font-weight: 700; color: var(--accent); letter-spacing: 1.5px; }
@@ -62,12 +49,10 @@
   .tag-vol   { border-color: var(--muted); color: var(--muted); }
   .tag-3m    { border-color: var(--muted); color: var(--muted); }
 
-  /* Each chart widget container */
   .chart-body { width: 100%; height: 500px; position: relative; }
   .chart-body > div { height: 100% !important; }
 
   footer { text-align: center; padding: 24px; font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--muted); border-top: 1px solid var(--border); }
-
   #scrollTop { position: fixed; bottom: 24px; right: 24px; width: 40px; height: 40px; background: var(--accent); color: var(--bg); border: none; border-radius: 4px; font-size: 18px; cursor: pointer; display: none; align-items: center; justify-content: center; z-index: 200; font-family: monospace; }
   #scrollTop.visible { display: flex; }
 </style>
@@ -110,13 +95,21 @@ const TICKERS = [
 ];
 
 const container = document.getElementById('chartsContainer');
-let widgetCounter = 0;
+
+// Calculate 3 months ago in Unix timestamp (seconds)
+function getFromTimestamp() {
+  const d = new Date();
+  d.setMonth(d.getMonth() - 3);
+  return Math.floor(d.getTime() / 1000);
+}
 
 function renderCharts(tickers) {
   container.innerHTML = '';
+  const fromTs = getFromTimestamp();
+  const toTs   = Math.floor(Date.now() / 1000) + 86400; // today + 1 day buffer
+
   tickers.forEach(ticker => {
-    widgetCounter++;
-    const containerId = 'tv_widget_' + ticker.replace(/[^a-zA-Z0-9]/g, '_') + '_' + widgetCounter;
+    const containerId = 'tv_' + ticker.replace(/[^a-zA-Z0-9]/g, '_') + '_' + Math.random().toString(36).slice(2,7);
 
     const card = document.createElement('div');
     card.className = 'chart-card';
@@ -131,58 +124,49 @@ function renderCharts(tickers) {
           <span class="tag tag-3m">3M · 1D</span>
         </div>
       </div>
-      <div class="chart-body">
-        <div id="${containerId}"></div>
-      </div>`;
+      <div class="chart-body"><div id="${containerId}"></div></div>`;
     container.appendChild(card);
 
-    // Use TradingView Advanced Chart widget — this correctly sets interval + range + studies
     new TradingView.widget({
       container_id: containerId,
-      autosize: true,
-      symbol: ticker,
-      interval: "D",          // Daily bars — locked
-      range: "3M",             // 3-month range — locked
-      timezone: "America/Chicago",
-      theme: "dark",
-      style: "1",              // Candlestick
-      locale: "en",
-      toolbar_bg: "#0d1117",
-      backgroundColor: "rgba(9, 12, 16, 1)",
-      gridColor: "rgba(30, 45, 61, 0.5)",
-      hide_top_toolbar: false,
-      hide_legend: false,
-      withdateranges: false,
+      autosize:     true,
+      symbol:       ticker,
+      interval:     "D",         // Daily bars
+      // Use from/to instead of range — this forces D interval correctly
+      from:         fromTs,
+      to:           toTs,
+      timezone:     "America/Chicago",
+      theme:        "dark",
+      style:        "1",
+      locale:       "en",
+      toolbar_bg:   "#0d1117",
+      backgroundColor: "rgba(9,12,16,1)",
+      gridColor:    "rgba(30,45,61,0.5)",
+      hide_top_toolbar:    false,
+      hide_legend:         false,
+      withdateranges:      false,
       allow_symbol_change: false,
-      save_image: false,
+      save_image:          false,
       studies: [
-        {
-          id: "MAExp@tv-basicstudies",
-          version: 1,
-          inputs: { length: 30 }
-        },
-        {
-          id: "MAExp@tv-basicstudies",
-          version: 2,
-          inputs: { length: 60 }
-        },
+        { id: "MAExp@tv-basicstudies", inputs: { length: 30 } },
+        { id: "MAExp@tv-basicstudies", inputs: { length: 60 } },
         "Volume@tv-basicstudies"
       ],
       overrides: {
-        "mainSeriesProperties.candleStyle.upColor":           "#00e676",
-        "mainSeriesProperties.candleStyle.downColor":         "#ff1744",
-        "mainSeriesProperties.candleStyle.borderUpColor":     "#00e676",
-        "mainSeriesProperties.candleStyle.borderDownColor":   "#ff1744",
-        "mainSeriesProperties.candleStyle.wickUpColor":       "#00e676",
-        "mainSeriesProperties.candleStyle.wickDownColor":     "#ff1744"
+        "mainSeriesProperties.candleStyle.upColor":         "#00e676",
+        "mainSeriesProperties.candleStyle.downColor":       "#ff1744",
+        "mainSeriesProperties.candleStyle.borderUpColor":   "#00e676",
+        "mainSeriesProperties.candleStyle.borderDownColor": "#ff1744",
+        "mainSeriesProperties.candleStyle.wickUpColor":     "#00e676",
+        "mainSeriesProperties.candleStyle.wickDownColor":   "#ff1744"
       },
       studies_overrides: {
         "moving average exp.plot.color.0":     "#ff9800",
         "moving average exp.plot.linewidth.0": 1.5,
         "moving average exp.plot.color.1":     "#2196f3",
         "moving average exp.plot.linewidth.1": 1.5,
-        "volume.volume.color.0":               "#ff1744",
-        "volume.volume.color.1":               "#00e676"
+        "volume.volume.color.0": "#ff1744",
+        "volume.volume.color.1": "#00e676"
       }
     });
   });
@@ -192,8 +176,7 @@ function renderCharts(tickers) {
 
 function filterCharts(query) {
   const q = query.trim().toUpperCase();
-  const filtered = q ? TICKERS.filter(t => t.includes(q)) : TICKERS;
-  renderCharts(filtered);
+  renderCharts(q ? TICKERS.filter(t => t.includes(q)) : TICKERS);
 }
 
 function scrollToTicker() {
