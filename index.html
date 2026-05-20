@@ -8,77 +8,110 @@
 <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #000; color: #c8c8c8; font-family: 'Roboto', sans-serif; font-size: 13px; }
+
+  body {
+    background: #e8e8e8;
+    color: #222;
+    font-family: 'Roboto', Arial, sans-serif;
+    font-size: 13px;
+  }
 
   /* ── HEADER ── */
   header {
     position: sticky; top: 0; z-index: 100;
-    background: #111; border-bottom: 1px solid #333;
-    padding: 0 16px; height: 48px;
+    background: #2b2b2b;
+    border-bottom: 2px solid #444;
+    padding: 0 20px; height: 44px;
     display: flex; align-items: center; justify-content: space-between;
   }
   .logo { font-family: 'Share Tech Mono', monospace; font-size: 16px; color: #00aaff; letter-spacing: 2px; }
-  .logo span { color: #ff8c00; }
-  .header-right { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #666; display: flex; align-items: center; gap: 18px; }
+  .logo span { color: #ff8800; }
+  .header-right { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #888; display: flex; align-items: center; gap: 16px; }
   .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #00cc44; display: inline-block; margin-right: 5px; animation: pulse 2s ease-in-out infinite; }
-  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.4} }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
 
   /* ── CONTROLS ── */
   .controls {
-    padding: 8px 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-    background: #0a0a0a; border-bottom: 1px solid #222;
+    padding: 7px 20px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    background: #f0f0f0; border-bottom: 1px solid #ccc;
   }
   .controls input[type=text] {
-    background: #1a1a1a; border: 1px solid #333; color: #ddd;
-    padding: 5px 10px; border-radius: 3px; font-family: 'Share Tech Mono', monospace;
-    font-size: 12px; width: 180px; outline: none;
+    background: #fff; border: 1px solid #bbb; color: #333;
+    padding: 4px 10px; border-radius: 3px;
+    font-family: 'Share Tech Mono', monospace; font-size: 12px;
+    width: 160px; outline: none;
   }
-  .controls input[type=text]:focus { border-color: #00aaff; }
-  .btn { padding: 5px 14px; border-radius: 3px; border: 1px solid #444; background: #1a1a1a; color: #aaa; font-family: 'Share Tech Mono', monospace; font-size: 11px; cursor: pointer; }
-  .btn:hover { border-color: #00aaff; color: #00aaff; }
-  .ticker-count { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #555; margin-left: auto; }
-  .ticker-count span { color: #00aaff; }
-
-  /* ── CHART CARDS ── */
-  .charts-container { padding: 6px 0; display: flex; flex-direction: column; gap: 6px; }
-
-  .chart-card { background: #0a0a0a; border: 1px solid #1e1e1e; border-left: none; border-right: none; overflow: hidden; }
-
-  /* StockCharts-style header bar */
-  .chart-header {
-    background: #111;
-    border-bottom: 1px solid #2a2a2a;
-    padding: 5px 12px;
-    display: flex; align-items: center; gap: 0;
-    flex-wrap: wrap;
+  .controls input[type=text]:focus { border-color: #2266cc; }
+  .btn {
+    padding: 4px 12px; border-radius: 3px;
+    border: 1px solid #aaa; background: #fff; color: #444;
+    font-family: 'Share Tech Mono', monospace; font-size: 11px; cursor: pointer;
   }
-  .ticker-label {
-    font-family: 'Share Tech Mono', monospace; font-size: 14px; font-weight: 700;
-    color: #fff; letter-spacing: 1px; min-width: 70px;
+  .btn:hover { border-color: #2266cc; color: #2266cc; background: #f0f5ff; }
+  .ticker-count { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #888; margin-left: auto; }
+  .ticker-count span { color: #2266cc; }
+
+  /* ── PAGE LAYOUT ── */
+  .charts-container {
+    padding: 10px 20px;
+    display: flex; flex-direction: column; gap: 12px;
+    max-width: 1300px;
+    margin: 0 auto;
   }
-  .price-block { display: flex; align-items: center; gap: 10px; flex: 1; }
-  .price-val   { font-family: 'Share Tech Mono', monospace; font-size: 14px; color: #fff; }
-  .chg.up { color: #00cc44; font-size: 12px; font-family: 'Share Tech Mono', monospace; }
-  .chg.dn { color: #ff4444; font-size: 12px; font-family: 'Share Tech Mono', monospace; }
-  .sep { color: #333; margin: 0 6px; }
 
-  /* EMA value pills — StockCharts style */
-  .ema-vals { display: flex; align-items: center; gap: 6px; }
-  .ema-pill {
-    font-family: 'Share Tech Mono', monospace; font-size: 11px;
-    padding: 1px 7px; border-radius: 2px; font-weight: 600;
+  /* ── CHART CARD — StockCharts white style ── */
+  .chart-card {
+    background: #fff;
+    border: 1px solid #bbb;
+    border-radius: 2px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
   }
-  .ema-pill.e30 { background: #ff8c00; color: #000; }
-  .ema-pill.e60 { background: #1e90ff; color: #fff; }
-  .ema-label    { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: #555; }
 
-  .chart-status { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #666; padding: 4px 12px; min-height: 20px; }
+  /* Top info bar — like StockCharts */
+  .sc-topbar {
+    background: #f5f5f5;
+    border-bottom: 1px solid #ddd;
+    padding: 4px 10px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;
+  }
+  .sc-ticker {
+    font-weight: 700; font-size: 14px; color: #111;
+    font-family: Arial, sans-serif; letter-spacing: 0.5px;
+    min-width: 60px;
+  }
+  .sc-price  { font-size: 14px; color: #111; font-weight: 600; }
+  .sc-chg.up { color: #006600; font-size: 12px; font-weight: 500; }
+  .sc-chg.dn { color: #cc0000; font-size: 12px; font-weight: 500; }
 
-  .chart-body { width: 100%; height: 500px; }
-  .vol-body   { width: 100%; height: 60px; border-top: 1px solid #111; }
+  /* EMA legend — like StockCharts top-left of chart */
+  .sc-legend {
+    font-size: 11px; display: flex; align-items: center; gap: 10px;
+    font-family: Arial, sans-serif;
+  }
+  .leg-ema30 { color: #1144cc; font-weight: 600; }
+  .leg-ema60 { color: #cc2200; font-weight: 600; }
+  .leg-vol   { color: #559955; font-weight: 600; }
 
-  footer { text-align: center; padding: 16px; font-family: 'Share Tech Mono', monospace; font-size: 10px; color: #333; border-top: 1px solid #1a1a1a; margin-top: 8px; }
-  #scrollTop { position: fixed; bottom: 20px; right: 20px; width: 36px; height: 36px; background: #1a1a1a; color: #aaa; border: 1px solid #333; border-radius: 3px; font-size: 16px; cursor: pointer; display: none; align-items: center; justify-content: center; z-index: 200; }
+  .chart-status { font-size: 11px; color: #888; padding: 3px 10px; min-height: 18px; font-family: monospace; }
+
+  /* Main price chart */
+  .chart-body { width: 100%; height: 420px; }
+  /* Volume pane */
+  .vol-body   { width: 100%; height: 90px; border-top: 1px solid #e0e0e0; }
+
+  footer {
+    text-align: center; padding: 14px;
+    font-family: monospace; font-size: 10px; color: #999;
+    border-top: 1px solid #ccc; margin-top: 10px;
+    background: #f5f5f5;
+  }
+  #scrollTop {
+    position: fixed; bottom: 20px; right: 20px;
+    width: 34px; height: 34px; background: #2b2b2b; color: #aaa;
+    border: none; border-radius: 3px; font-size: 16px;
+    cursor: pointer; display: none; align-items: center; justify-content: center; z-index: 200;
+  }
   #scrollTop.visible { display: flex; }
 </style>
 </head>
@@ -102,10 +135,9 @@
 </div>
 
 <div class="charts-container" id="chartsContainer"></div>
-<footer>Yahoo Finance · 15-min delayed · Daily OHLC Bars · EMA 30 · EMA 60 · 3-Month</footer>
+<footer>Yahoo Finance · 15-min delayed · Daily OHLC · EMA(30) blue · EMA(60) red · 3-Month</footer>
 <button id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
-<script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 <script>
 const TICKERS = [
   "AAOI","AEHR","AGCC","AGPU","AIOS","AKAN","ALM","ALMU","ALOY","ANPA",
@@ -128,35 +160,29 @@ function calcEMA(data, period) {
   });
 }
 
-// ── Fetch with multiple proxy fallbacks ──────────────────────
+// ── Fetch with fallback proxies ──────────────────────────────
 async function fetchOHLCV(ticker) {
   const now  = Math.floor(Date.now() / 1000);
   const from = now - (110 * 86400);
   const yfUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&period1=${from}&period2=${now}&includePrePost=false`;
-
   const proxies = [
     `https://api.allorigins.win/get?url=${encodeURIComponent(yfUrl)}`,
     `https://corsproxy.io/?${encodeURIComponent(yfUrl)}`,
     `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(yfUrl)}`
   ];
-
   let lastErr = null;
   for (const proxy of proxies) {
     try {
-      const res  = await fetch(proxy, { signal: AbortSignal.timeout(8000) });
+      const res = await fetch(proxy, { signal: AbortSignal.timeout(8000) });
       if (!res.ok) continue;
-      const raw  = await res.text();
-
-      // allorigins wraps in {contents:...}, others return raw JSON
+      const raw = await res.text();
       let parsed;
       try {
-        const wrapper = JSON.parse(raw);
-        parsed = wrapper.contents ? JSON.parse(wrapper.contents) : wrapper;
+        const w = JSON.parse(raw);
+        parsed = w.contents ? JSON.parse(w.contents) : w;
       } catch { continue; }
-
       const result = parsed?.chart?.result?.[0];
       if (!result) continue;
-
       const ts = result.timestamp;
       const q  = result.indicators.quote[0];
       const bars = [];
@@ -178,34 +204,43 @@ async function fetchOHLCV(ticker) {
   throw new Error(lastErr?.message || 'All proxies failed');
 }
 
-// ── Lightweight Charts config ────────────────────────────────
+// ── Chart options — StockCharts white style ──────────────────
 function makeChartOpts(el) {
   return {
     container: el,
     width:  el.offsetWidth,
-    height: 500,
+    height: 420,
     layout: {
-      background: { color: '#050505' },
-      textColor:  '#666',
-      fontFamily: "'Share Tech Mono', monospace",
-      fontSize:   10
+      background: { color: '#ffffff' },
+      textColor:  '#444',
+      fontFamily: "Arial, sans-serif",
+      fontSize:   11
     },
     grid: {
-      vertLines: { color: '#141414' },
-      horzLines:  { color: '#141414' }
+      vertLines: { color: '#e8e8e8', style: LightweightCharts.LineStyle.Solid },
+      horzLines:  { color: '#e8e8e8', style: LightweightCharts.LineStyle.Solid }
     },
-    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+    crosshair: {
+      mode: LightweightCharts.CrosshairMode.Normal,
+      vertLine: { color: '#999', width: 1, style: LightweightCharts.LineStyle.Dashed },
+      horzLine: { color: '#999', width: 1, style: LightweightCharts.LineStyle.Dashed }
+    },
     rightPriceScale: {
-      borderColor: '#2a2a2a',
-      scaleMargins: { top: 0.08, bottom: 0.08 }
+      borderColor: '#ccc',
+      scaleMargins: { top: 0.06, bottom: 0.06 },
+      textColor: '#444'
     },
     timeScale: {
-      borderColor:    '#2a2a2a',
+      borderColor:    '#ccc',
       timeVisible:    true,
       secondsVisible: false,
       fixLeftEdge:    true,
       fixRightEdge:   true,
-      barSpacing:     11
+      barSpacing:     10,
+      tickMarkFormatter: (t) => {
+        const d = new Date(t * 1000);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      }
     },
     handleScroll: true,
     handleScale:  true
@@ -216,62 +251,63 @@ function makeVolOpts(el) {
   return {
     container: el,
     width:  el.offsetWidth,
-    height: 60,
+    height: 90,
     layout: {
-      background: { color: '#050505' },
-      textColor:  '#555',
-      fontFamily: "'Share Tech Mono', monospace",
-      fontSize:   9
+      background: { color: '#ffffff' },
+      textColor:  '#888',
+      fontFamily: "Arial, sans-serif",
+      fontSize:   10
     },
     grid: {
-      vertLines: { color: '#0f0f0f' },
-      horzLines:  { color: '#0f0f0f' }
+      vertLines: { color: '#f0f0f0' },
+      horzLines:  { color: '#f0f0f0' }
     },
     rightPriceScale: {
-      borderColor: '#2a2a2a',
-      scaleMargins: { top: 0.05, bottom: 0 },
-      drawTicks: false
+      borderColor: '#ccc',
+      scaleMargins: { top: 0.1, bottom: 0 },
+      textColor: '#888'
     },
     timeScale: {
-      borderColor:    '#2a2a2a',
-      timeVisible:    true,
-      secondsVisible: false,
+      borderColor:    '#ccc',
+      timeVisible:    false,
       fixLeftEdge:    true,
-      fixRightEdge:   true
+      fixRightEdge:   true,
+      barSpacing:     10
     },
     handleScroll: false,
     handleScale:  false
   };
 }
 
-const allCharts = [];
-const container = document.getElementById('chartsContainer');
+const allCharts   = [];
+const allVolCharts = [];
+const container   = document.getElementById('chartsContainer');
 let currentTickers = [...TICKERS];
 
 // ── Build one card ───────────────────────────────────────────
 async function buildCard(ticker) {
   const safeId = ticker.replace(/[^a-zA-Z0-9]/g,'_');
   const card   = document.createElement('div');
-  card.className    = 'chart-card';
+  card.className      = 'chart-card';
   card.dataset.ticker = ticker;
+
   card.innerHTML = `
-    <div class="chart-header">
-      <span class="ticker-label">${ticker}</span>
-      <div class="price-block">
-        <span class="price-val" id="pv_${safeId}">--</span>
-        <span class="chg" id="pc_${safeId}"></span>
-        <span class="sep">|</span>
-        <div class="ema-vals">
-          <span class="ema-label">EMA30</span>
-          <span class="ema-pill e30" id="e30_${safeId}">--</span>
-          <span class="ema-label">EMA60</span>
-          <span class="ema-pill e60" id="e60_${safeId}">--</span>
-        </div>
+    <div class="sc-topbar">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="sc-ticker">${ticker}</span>
+        <span class="sc-price" id="pv_${safeId}">--</span>
+        <span class="sc-chg"   id="pc_${safeId}"></span>
+      </div>
+      <div class="sc-legend">
+        <span class="leg-ema30">EMA(30) <span id="e30_${safeId}">--</span></span>
+        <span class="leg-ema60">EMA(60) <span id="e60_${safeId}">--</span></span>
+        <span class="leg-vol">Volume <span id="vol_${safeId}">--</span></span>
       </div>
     </div>
     <div class="chart-status" id="st_${safeId}">Loading…</div>
     <div class="chart-body" id="cb_${safeId}"></div>
     <div class="vol-body"   id="vb_${safeId}"></div>`;
+
   container.appendChild(card);
 
   try {
@@ -283,10 +319,17 @@ async function buildCard(ticker) {
     const last   = bars[bars.length - 1];
     const prev   = bars[bars.length - 2];
     const chgPct = prev ? ((last.close - prev.close) / prev.close * 100) : 0;
+    const chgAmt = prev ? (last.close - prev.close) : 0;
     document.getElementById('pv_' + safeId).textContent = last.close.toFixed(2);
     const chgEl = document.getElementById('pc_' + safeId);
-    chgEl.textContent  = (chgPct >= 0 ? '+' : '') + chgPct.toFixed(2) + '%';
-    chgEl.className    = 'chg ' + (chgPct >= 0 ? 'up' : 'dn');
+    chgEl.textContent = (chgPct >= 0 ? '▲' : '▼') + ' ' + Math.abs(chgAmt).toFixed(2) + ' (' + (chgPct >= 0 ? '+' : '') + chgPct.toFixed(2) + '%)';
+    chgEl.className   = 'sc-chg ' + (chgPct >= 0 ? 'up' : 'dn');
+
+    // Volume label
+    const volLabel = last.volume >= 1e6
+      ? (last.volume/1e6).toFixed(2) + 'M'
+      : (last.volume/1e3).toFixed(0) + 'K';
+    document.getElementById('vol_' + safeId).textContent = volLabel;
 
     // EMA values
     const ema30data = calcEMA(bars, 30);
@@ -298,18 +341,18 @@ async function buildCard(ticker) {
     const chartEl = document.getElementById('cb_' + safeId);
     const chart   = LightweightCharts.createChart(chartEl, makeChartOpts(chartEl));
 
-    // OHLC bar series — thin bars, no price line
+    // OHLC bars — black up, red down (StockCharts style)
     const barSeries = chart.addBarSeries({
-      upColor:          '#00cc44',
-      downColor:        '#ff4444',
+      upColor:          '#111111',
+      downColor:        '#cc2200',
       thinBars:         true,
       priceLineVisible: false
     });
     barSeries.setData(bars);
 
-    // EMA 30 — orange, value label on right axis only (no broken line across chart)
+    // EMA 30 — blue (StockCharts uses blue for shorter EMA)
     const ema30s = chart.addLineSeries({
-      color:                  '#ff8c00',
+      color:                  '#1144cc',
       lineWidth:              1.5,
       priceLineVisible:       false,
       lastValueVisible:       true,
@@ -317,9 +360,9 @@ async function buildCard(ticker) {
     });
     ema30s.setData(ema30data);
 
-    // EMA 60 — blue, value label on right axis only (no broken line across chart)
+    // EMA 60 — red (StockCharts uses red for longer EMA)
     const ema60s = chart.addLineSeries({
-      color:                  '#1e90ff',
+      color:                  '#cc2200',
       lineWidth:              1.5,
       priceLineVisible:       false,
       lastValueVisible:       true,
@@ -334,31 +377,28 @@ async function buildCard(ticker) {
     const volEl    = document.getElementById('vb_' + safeId);
     const volChart = LightweightCharts.createChart(volEl, makeVolOpts(volEl));
 
-    // Use a bar series for volume to get thin 1px sticks — much thinner than histogram
     const volSeries = volChart.addHistogramSeries({
       priceFormat:  { type: 'volume' },
       priceScaleId: 'right',
-      scaleMargins: { top: 0.0, bottom: 0 },
+      scaleMargins: { top: 0.1, bottom: 0 },
       base: 0
     });
-
     volSeries.setData(bars.map(b => ({
       time:  b.time,
       value: b.volume,
-      color: b.close >= b.open ? 'rgba(0,180,60,0.7)' : 'rgba(220,50,50,0.7)'
+      // StockCharts: muted green up, muted pink down
+      color: b.close >= b.open ? 'rgba(80,160,80,0.65)' : 'rgba(210,100,100,0.65)'
     })));
-
-    // Force very tight bar spacing on vol chart to make bars thin
-    volChart.applyOptions({
-      timeScale: {
-        barSpacing: 3,
-        fixLeftEdge: true,
-        fixRightEdge: true,
-        borderColor: '#1a1a1a',
-        timeVisible: false
-      }
-    });
     volChart.timeScale().fitContent();
+    allVolCharts.push({ chart: volChart, el: volEl, series: volSeries });
+
+    // Sync timescale between price and volume
+    chart.timeScale().subscribeVisibleLogicalRangeChange(range => {
+      if (range) volChart.timeScale().setVisibleLogicalRange(range);
+    });
+    volChart.timeScale().subscribeVisibleLogicalRangeChange(range => {
+      if (range) chart.timeScale().setVisibleLogicalRange(range);
+    });
 
     // Sync crosshair
     chart.subscribeCrosshairMove(p => {
@@ -377,9 +417,10 @@ async function buildCard(ticker) {
 
 // ── Render ───────────────────────────────────────────────────
 async function renderCharts(tickers) {
-  container.innerHTML  = '';
-  allCharts.length     = 0;
-  currentTickers       = tickers;
+  container.innerHTML = '';
+  allCharts.length    = 0;
+  allVolCharts.length = 0;
+  currentTickers      = tickers;
   document.getElementById('visibleCount').textContent = tickers.length;
   const BATCH = 5;
   for (let i = 0; i < tickers.length; i += BATCH) {
@@ -407,9 +448,13 @@ function updateClock() {
 }
 setInterval(updateClock, 1000); updateClock();
 
-// Scroll-to-top
 window.addEventListener('scroll', () => {
   document.getElementById('scrollTop').classList.toggle('visible', window.scrollY > 500);
+});
+
+// Resize
+window.addEventListener('resize', () => {
+  allCharts.forEach(({chart, el}) => chart.resize(el.offsetWidth, el.offsetHeight));
 });
 
 // Auto-refresh every 5 min during market hours
@@ -418,11 +463,6 @@ setInterval(() => {
   const h   = ct.getHours(), m = ct.getMinutes(), day = ct.getDay();
   if (day>=1&&day<=5&&(h>8||(h===8&&m>=30))&&h<16) refreshAll();
 }, 5*60*1000);
-
-// Window resize
-window.addEventListener('resize', () => {
-  allCharts.forEach(({chart, el}) => chart.resize(el.offsetWidth, el.offsetHeight));
-});
 
 renderCharts(TICKERS);
 </script>
