@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stock Watchlist — EMA 30/60</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #090c10;
+    --surface: #0d1117;
+    --border: #1e2d3d;
+    --accent: #00e5ff;
+    --accent2: #ff6b35;
+    --text: #cdd9e5;
+    --muted: #546e7a;
+    --green: #00e676;
+    --red: #ff1744;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(9,12,16,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 18px;
+    color: var(--accent);
+    letter-spacing: 2px;
+  }
+  .logo span { color: var(--accent2); }
+
+  .header-meta {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .live-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    display: inline-block;
+    margin-right: 6px;
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,230,118,0.5); }
+    50%      { opacity: 0.7; box-shadow: 0 0 0 5px rgba(0,230,118,0); }
+  }
+
+  /* ── CONTROLS ── */
+  .controls {
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .controls label {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .controls input[type=text] {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    width: 220px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .controls input[type=text]:focus { border-color: var(--accent); }
+
+  .btn {
+    padding: 6px 16px;
+    border-radius: 4px;
+    border: 1px solid var(--accent);
+    background: transparent;
+    color: var(--accent);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn:hover { background: var(--accent); color: var(--bg); }
+
+  .ticker-count {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-left: auto;
+  }
+  .ticker-count span { color: var(--accent); }
+
+  /* ── CHARTS GRID ── */
+  .charts-container {
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .chart-card:hover { border-color: #2a3f52; }
+
+  .chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ticker-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 1.5px;
+  }
+
+  .chart-tags {
+    display: flex;
+    gap: 6px;
+  }
+
+  .tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    border: 1px solid;
+  }
+  .tag-ema30  { border-color: #ff9800; color: #ff9800; }
+  .tag-ema60  { border-color: #2196f3; color: #2196f3; }
+  .tag-vol    { border-color: var(--muted); color: var(--muted); }
+  .tag-3m     { border-color: var(--muted); color: var(--muted); }
+
+  .chart-body {
+    width: 100%;
+    height: 480px;
+  }
+
+  .chart-body iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 24px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── SCROLL TO TOP ── */
+  #scrollTop {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 40px; height: 40px;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 4px;
+    font-size: 18px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    font-family: monospace;
+  }
+  #scrollTop.visible { display: flex; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">WATCH<span>LIST</span></div>
+  <div class="header-meta">
+    <span><span class="live-dot"></span>LIVE</span>
+    <span id="clock">--:--:--</span>
+    <span>EMA 30 · EMA 60 · VOL · 3M</span>
+  </div>
+</header>
+
+<div class="controls">
+  <label>FILTER:</label>
+  <input type="text" id="filterInput" placeholder="Search ticker..." oninput="filterCharts(this.value)">
+  <button class="btn" onclick="filterCharts('')">CLEAR</button>
+  <button class="btn" onclick="scrollToTicker()">GO TO</button>
+  <div class="ticker-count">Showing <span id="visibleCount">76</span> / 76 charts</div>
+</div>
+
+<div class="charts-container" id="chartsContainer"></div>
+
+<footer>Data provided by TradingView · 15-min delayed for free accounts · EMA30 EMA60 Volume · 3-Month Daily</footer>
+
+<button id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+const TICKERS = [
+  "AAOI","AEHR","AGCC","AGPU","AIOS","AKAN","ALM","ALMU","ALOY","ANPA",
+  "BAOS","BE","BMHL","BNAI","BULL","BWXT","CHNR","CRCL","CRML","EGG",
+  "FGL","FLY","FOFO","FORM","FTAI","HQ","IMSR","INTC","JLHL","KRKR",
+  "LITE","LPTH","LUD","LWLG","MTC","MU","MXC","MXL","NBIS","NEGG",
+  "NNNN","NOK","NPT","NVA","NVDA","OIO","PBM","PHOE","PL","POAS",
+  "RDDT","RDW","RGC","ROMA","RYM","SATL","SIVEF","SKYQ","SNDK","SOGP",
+  "SPHL","SUPX","TLRY","TRT","TSLA","TSM","UURAF","VG","WAFU","WNW",
+  "WOLF","XNDU","YDDL","YI","YJ","YOOV","IWC","NEBX","QQQ","VCX"
+];
+
+const container = document.getElementById('chartsContainer');
+
+// Build TradingView widget URL for each ticker
+// studies encoded: EMA30, EMA60, Volume
+function makeWidgetHTML(ticker) {
+  const widgetConfig = {
+    autosize: true,
+    symbol: ticker,
+    interval: "D",
+    range: "3M",
+    timezone: "America/Chicago",
+    theme: "dark",
+    style: "1",
+    locale: "en",
+    backgroundColor: "rgba(13, 17, 23, 1)",
+    gridColor: "rgba(30, 45, 61, 0.4)",
+    hide_top_toolbar: false,
+    hide_legend: false,
+    save_image: false,
+    studies: [
+      {
+        id: "MAExp@tv-basicstudies",
+        inputs: { length: 30 },
+        override: { "Plot.color": "rgb(255, 152, 0)", "Plot.linewidth": 1.5 }
+      },
+      {
+        id: "MAExp@tv-basicstudies",
+        inputs: { length: 60 },
+        override: { "Plot.color": "rgb(33, 150, 243)", "Plot.linewidth": 1.5 }
+      },
+      "Volume@tv-basicstudies"
+    ],
+    show_popup_button: true,
+    popup_width: "1200",
+    popup_height: "700"
+  };
+
+  return `
+    <div class="tradingview-widget-container" style="height:100%">
+      <div id="tv_${ticker}" style="height:100%"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/tv.js"><\/script>
+      <script type="text/javascript">
+        new TradingView.widget(Object.assign(${JSON.stringify(widgetConfig)}, {
+          container_id: "tv_${ticker}"
+        }));
+      <\/script>
+    </div>`;
+}
+
+// Render all charts
+function renderCharts(tickers) {
+  container.innerHTML = '';
+  tickers.forEach(ticker => {
+    const card = document.createElement('div');
+    card.className = 'chart-card';
+    card.dataset.ticker = ticker;
+    card.innerHTML = `
+      <div class="chart-header">
+        <span class="ticker-label">${ticker}</span>
+        <div class="chart-tags">
+          <span class="tag tag-ema30">EMA 30</span>
+          <span class="tag tag-ema60">EMA 60</span>
+          <span class="tag tag-vol">VOL</span>
+          <span class="tag tag-3m">3M · 1D</span>
+        </div>
+      </div>
+      <div class="chart-body">
+        <iframe
+          src="https://s.tradingview.com/widgetembed/?frameElementId=tv_${ticker}&symbol=${encodeURIComponent(ticker)}&interval=D&range=3M&hidesidetoolbar=0&symboledit=1&saveimage=0&toolbarbg=0d1117&studies=MAExp%4030%7CMAExp%4060%7CVolume&theme=dark&style=1&timezone=America%2FChicago&studies_overrides=%7B%7D&overrides=%7B%22mainSeriesProperties.candleStyle.upColor%22%3A%22%2300e676%22%2C%22mainSeriesProperties.candleStyle.downColor%22%3A%22%23ff1744%22%2C%22mainSeriesProperties.candleStyle.borderUpColor%22%3A%22%2300e676%22%2C%22mainSeriesProperties.candleStyle.borderDownColor%22%3A%22%23ff1744%22%7D&locale=en"
+          allowtransparency="true"
+          frameborder="0"
+          scrolling="no"
+          allowfullscreen
+        ></iframe>
+      </div>`;
+    container.appendChild(card);
+  });
+  document.getElementById('visibleCount').textContent = tickers.length;
+}
+
+// Filter
+function filterCharts(query) {
+  const q = query.trim().toUpperCase();
+  document.getElementById('filterInput').value = query;
+  if (!q) {
+    renderCharts(TICKERS);
+    return;
+  }
+  const filtered = TICKERS.filter(t => t.includes(q));
+  renderCharts(filtered);
+}
+
+// Scroll to ticker
+function scrollToTicker() {
+  const q = document.getElementById('filterInput').value.trim().toUpperCase();
+  if (!q) return;
+  const card = document.querySelector(`.chart-card[data-ticker="${q}"]`);
+  if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Clock
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toLocaleTimeString('en-US', { hour12: false, timeZone: 'America/Chicago' }) + ' CT';
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// Scroll-to-top button
+window.addEventListener('scroll', () => {
+  document.getElementById('scrollTop').classList.toggle('visible', window.scrollY > 600);
+});
+
+// Initial render
+renderCharts(TICKERS);
+</script>
+</body>
+</html>
