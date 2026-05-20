@@ -40,7 +40,7 @@
   .ticker-count span { color: #00aaff; }
 
   /* ── CHART CARDS ── */
-  .charts-container { padding: 8px; display: flex; flex-direction: column; gap: 8px; }
+  .charts-container { padding: 6px 2px; display: flex; flex-direction: column; gap: 6px; }
 
   .chart-card { background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 3px; overflow: hidden; }
 
@@ -74,8 +74,8 @@
 
   .chart-status { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #666; padding: 4px 12px; min-height: 20px; }
 
-  .chart-body { width: 100%; height: 250px; }
-  .vol-body   { width: 100%; height: 75px; border-top: 1px solid #1a1a1a; }
+  .chart-body { width: 100%; height: 380px; }
+  .vol-body   { width: 100%; height: 70px; border-top: 1px solid #1a1a1a; }
 
   footer { text-align: center; padding: 16px; font-family: 'Share Tech Mono', monospace; font-size: 10px; color: #333; border-top: 1px solid #1a1a1a; margin-top: 8px; }
   #scrollTop { position: fixed; bottom: 20px; right: 20px; width: 36px; height: 36px; background: #1a1a1a; color: #aaa; border: 1px solid #333; border-radius: 3px; font-size: 16px; cursor: pointer; display: none; align-items: center; justify-content: center; z-index: 200; }
@@ -183,7 +183,7 @@ function makeChartOpts(el) {
   return {
     container: el,
     width:  el.offsetWidth,
-    height: 250,
+    height: 380,
     layout: {
       background: { color: '#050505' },
       textColor:  '#666',
@@ -216,7 +216,7 @@ function makeVolOpts(el) {
   return {
     container: el,
     width:  el.offsetWidth,
-    height: 75,
+    height: 70,
     layout: {
       background: { color: '#050505' },
       textColor:  '#555',
@@ -307,27 +307,21 @@ async function buildCard(ticker) {
     });
     barSeries.setData(bars);
 
-    // EMA 30 — orange, value label on axis
+    // EMA 30 — orange, value label on right axis only (no broken line across chart)
     const ema30s = chart.addLineSeries({
       color:                  '#ff8c00',
       lineWidth:              1.5,
-      priceLineVisible:       true,
-      priceLineStyle:         LightweightCharts.LineStyle.Dashed,
-      priceLineColor:         '#ff8c00',
-      priceLineWidth:         1,
+      priceLineVisible:       false,
       lastValueVisible:       true,
       crosshairMarkerVisible: false
     });
     ema30s.setData(ema30data);
 
-    // EMA 60 — blue, value label on axis
+    // EMA 60 — blue, value label on right axis only (no broken line across chart)
     const ema60s = chart.addLineSeries({
       color:                  '#1e90ff',
       lineWidth:              1.5,
-      priceLineVisible:       true,
-      priceLineStyle:         LightweightCharts.LineStyle.Dashed,
-      priceLineColor:         '#1e90ff',
-      priceLineWidth:         1,
+      priceLineVisible:       false,
       lastValueVisible:       true,
       crosshairMarkerVisible: false
     });
@@ -342,13 +336,16 @@ async function buildCard(ticker) {
     const volSeries = volChart.addHistogramSeries({
       priceFormat:  { type: 'volume' },
       priceScaleId: 'vol',
-      scaleMargins: { top: 0.05, bottom: 0 }
+      scaleMargins: { top: 0.05, bottom: 0 },
+      base: 0
     });
     volSeries.setData(bars.map(b => ({
       time:  b.time,
       value: b.volume,
-      color: b.close >= b.open ? 'rgba(0,204,68,0.55)' : 'rgba(255,68,68,0.55)'
+      color: b.close >= b.open ? 'rgba(0,204,68,0.5)' : 'rgba(255,68,68,0.5)'
     })));
+    // Make volume bars visually thinner via price scale margin
+    volChart.priceScale('vol').applyOptions({ scaleMargins: { top: 0.1, bottom: 0 } });
     volChart.timeScale().fitContent();
 
     // Sync crosshair
