@@ -419,7 +419,7 @@ async function buildCard(ticker) {
       ctx.clearRect(0, 0, W, H);
 
       const maxVol = Math.max(...bars.map(b => b.volume));
-      const barW   = 4; // ← fixed 4px slim bars regardless of zoom
+      const barW   = 12; // ← fixed 12px bars
       const N      = bars.length;
       const spacing = (W - 50) / N; // leave right margin for price scale
 
