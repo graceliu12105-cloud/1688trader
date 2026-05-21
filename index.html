@@ -272,7 +272,8 @@ function makeVolOpts(el) {
       timeVisible:    false,
       fixLeftEdge:    true,
       fixRightEdge:   true,
-      barSpacing:     10
+      barSpacing:     4,
+      minBarSpacing:  1
     },
     handleScroll: false,
     handleScale:  false
@@ -373,34 +374,78 @@ async function buildCard(ticker) {
     chart.timeScale().fitContent();
     allCharts.push({ chart, el: chartEl });
 
-    // ── Volume ───────────────────────────────────────────────
-    const volEl    = document.getElementById('vb_' + safeId);
-    const volChart = LightweightCharts.createChart(volEl, makeVolOpts(volEl));
+    // ── Volume — drawn as thin canvas bars ───────────────────
+    const volEl  = document.getElementById('vb_' + safeId);
 
+    // Instead of LightweightCharts histogram (which ties bar width to barSpacing),
+    // draw volume as a custom canvas so we can make bars truly slim (2px wide)
+    volEl.style.position = 'relative';
+    const canvas  = document.createElement('canvas');
+    canvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;display:block;';
+    volEl.appendChild(canvas);
+
+    // We need the same time positions as the main chart — use a hidden LW chart to sync
+    const volChart = LightweightCharts.createChart(volEl, {
+      ...makeVolOpts(volEl),
+      layout: { background: { color: 'transparent' }, textColor: '#888', fontFamily: 'Arial', fontSize: 10 }
+    });
+    // invisible histogram just for time axis reference
     const volSeries = volChart.addHistogramSeries({
       priceFormat:  { type: 'volume' },
       priceScaleId: 'right',
       scaleMargins: { top: 0.1, bottom: 0 },
-      base: 0
+      base: 0,
+      color: 'transparent'
     });
-    volSeries.setData(bars.map(b => ({
+    const volData = bars.map(b => ({
       time:  b.time,
       value: b.volume,
-      // StockCharts: muted green up, muted pink down
-      color: b.close >= b.open ? 'rgba(80,160,80,0.65)' : 'rgba(210,100,100,0.65)'
-    })));
+      color: 'rgba(0,0,0,0)'
+    }));
+    volSeries.setData(volData);
     volChart.timeScale().fitContent();
+
+    // Draw the actual slim bars on canvas
+    function drawVolBars() {
+      const rect = volEl.getBoundingClientRect();
+      const W = rect.width, H = rect.height;
+      if (!W || !H) return;
+      canvas.width  = W * window.devicePixelRatio;
+      canvas.height = H * window.devicePixelRatio;
+      canvas.style.width  = W + 'px';
+      canvas.style.height = H + 'px';
+      const ctx = canvas.getContext('2d');
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      ctx.clearRect(0, 0, W, H);
+
+      const maxVol = Math.max(...bars.map(b => b.volume));
+      const barW   = 2; // ← fixed 2px slim bars regardless of zoom
+      const N      = bars.length;
+      const spacing = (W - 50) / N; // leave right margin for price scale
+
+      bars.forEach((b, i) => {
+        const barH  = ((b.volume / maxVol) * (H - 4));
+        const x     = 4 + i * spacing + spacing / 2 - barW / 2;
+        const y     = H - barH;
+        ctx.fillStyle = b.close >= b.open ? 'rgba(80,160,80,0.75)' : 'rgba(200,80,80,0.75)';
+        ctx.fillRect(Math.round(x), Math.round(y), barW, Math.round(barH));
+      });
+
+      // Y-axis label (max vol)
+      ctx.fillStyle = '#aaa';
+      ctx.font = '9px Arial';
+      ctx.textAlign = 'right';
+      const maxLabel = maxVol >= 1e6 ? (maxVol/1e6).toFixed(0)+'M' : (maxVol/1e3).toFixed(0)+'K';
+      ctx.fillText(maxLabel, W - 2, 10);
+    }
+
+    // Draw after a short delay to let DOM settle
+    setTimeout(drawVolBars, 100);
+    window.addEventListener('resize', drawVolBars);
+
     allVolCharts.push({ chart: volChart, el: volEl, series: volSeries });
 
-    // Sync timescale between price and volume
-    chart.timeScale().subscribeVisibleLogicalRangeChange(range => {
-      if (range) volChart.timeScale().setVisibleLogicalRange(range);
-    });
-    volChart.timeScale().subscribeVisibleLogicalRangeChange(range => {
-      if (range) chart.timeScale().setVisibleLogicalRange(range);
-    });
-
-    // Sync crosshair
+    // Sync crosshair from main chart to vol panel
     chart.subscribeCrosshairMove(p => {
       if (p?.time) volChart.setCrosshairPosition(0, p.time, volSeries);
       else volChart.clearCrosshairPosition();
